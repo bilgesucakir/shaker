@@ -1,0 +1,23 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Built SPA (produced by the Maven frontend plugin from frontend/)
+src/main/resources/static/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Secrets / local env — never commit
+.env
+*.env
+

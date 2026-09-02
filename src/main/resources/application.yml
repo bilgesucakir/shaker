@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: shaker
+  data:
+    mongodb:
+      # Required. Point at MongoDB Atlas (or any external MongoDB). No local database is used.
+      #   MONGODB_URI="mongodb+srv://USER:PASS@cluster0.xxxxx.mongodb.net/shaker?retryWrites=true&w=majority&appName=shaker"
+      # The database name is taken from the /shaker path segment of the URI.
+      uri: ${MONGODB_URI}
+      # Database name. Used even when the URI has no /db path segment (as the Atlas
+      # "Drivers" string doesn't). Overridable with MONGODB_DATABASE.
+      database: ${MONGODB_DATABASE:shaker}
+      # Build unique/secondary indexes declared via @Indexed on startup.
+      auto-index-creation: true
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+
+app:
+  # Seed starter guidelines on boot if the collection is empty (idempotent).
+  seed: true
+  # Admin user is only seeded when this is set (keeps weak creds out of a fresh cloud DB).
+  #   APP_ADMIN_PASSWORD=... APP_ADMIN_USERNAME=me
+  admin-username: ${APP_ADMIN_USERNAME:admin}
+  admin-password: ${APP_ADMIN_PASSWORD:}
+
+logging:
+  level:
+    com.shaker: DEBUG
+    org.springframework.security: INFO
+    org.mongodb.driver: WARN
