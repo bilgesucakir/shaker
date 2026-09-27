@@ -16,6 +16,7 @@ async function logout() {
     <RouterLink class="brand" to="/">SHAKER</RouterLink>
     <RouterLink to="/guidelines">Guidelines</RouterLink>
     <RouterLink v-if="auth.isAuthenticated" to="/diary">Diary</RouterLink>
+    <RouterLink v-if="auth.hasRole('ADMIN')" to="/admin/users">Admin</RouterLink>
     <span class="spacer" />
     <template v-if="auth.ready && auth.isAuthenticated">
       <RouterLink to="/account">{{ auth.user.displayName }}</RouterLink>

@@ -4,16 +4,16 @@ import api from '../api'
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
-    ready: false // becomes true once the initial /me check has completed
+    ready: false // becomes true once the initial session check has completed
   }),
   getters: {
     isAuthenticated: (state) => state.user !== null,
     hasRole: (state) => (role) => state.user?.roles?.includes(role) ?? false
   },
   actions: {
-    async fetchMe() {
+    async fetchSession() {
       try {
-        const { data } = await api.get('/auth/me')
+        const { data } = await api.get('/auth/session')
         this.user = data
       } catch (err) {
         if (err.response && err.response.status === 401) {
