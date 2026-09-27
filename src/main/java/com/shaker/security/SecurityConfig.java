@@ -40,8 +40,21 @@ public class SecurityConfig {
                         // --- public API ---
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/guidelines/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/ingredients/**").permitAll()
+                        // specific authenticated GETs must be declared before the general
+                        // recipes/collections GET permitAll rules below (first match wins)
+                        .requestMatchers(HttpMethod.GET, "/api/recipes/mine", "/api/recipes/*/availability")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/collections/mine").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/recipes/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/collections/**").permitAll()
                         // --- role-gated API ---
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // the users resource is entirely admin-only for now (no public directory yet)
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        // writes to otherwise-public reference resources are admin-only too
+                        .requestMatchers(HttpMethod.POST, "/api/ingredients/**", "/api/guidelines/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/ingredients/**", "/api/guidelines/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/ingredients/**", "/api/guidelines/**").hasRole("ADMIN")
                         // --- everything else under /api needs a logged-in user ---
                         .requestMatchers("/api/**").authenticated()
                         // --- static SPA assets + client-side routes ---

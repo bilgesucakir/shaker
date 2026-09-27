@@ -1,15 +1,12 @@
 spring:
   application:
     name: shaker
+  # No profile given -> "local" (embedded MongoDB, this machine). Personal/other machines
+  # opt into the cloud database explicitly with SPRING_PROFILES_ACTIVE=cloud.
+  profiles:
+    default: local
   data:
     mongodb:
-      # Required. Point at MongoDB Atlas (or any external MongoDB). No local database is used.
-      #   MONGODB_URI="mongodb+srv://USER:PASS@cluster0.xxxxx.mongodb.net/shaker?retryWrites=true&w=majority&appName=shaker"
-      # The database name is taken from the /shaker path segment of the URI.
-      uri: ${MONGODB_URI}
-      # Database name. Used even when the URI has no /db path segment (as the Atlas
-      # "Drivers" string doesn't). Overridable with MONGODB_DATABASE.
-      database: ${MONGODB_DATABASE:shaker}
       # Build unique/secondary indexes declared via @Indexed on startup.
       auto-index-creation: true
   threads:
@@ -24,7 +21,7 @@ server:
 app:
   # Seed starter guidelines on boot if the collection is empty (idempotent).
   seed: true
-  # Admin user is only seeded when this is set (keeps weak creds out of a fresh cloud DB).
+  # Admin user is only seeded when this is set (keeps weak creds out of a fresh DB).
   #   APP_ADMIN_PASSWORD=... APP_ADMIN_USERNAME=me
   admin-username: ${APP_ADMIN_USERNAME:admin}
   admin-password: ${APP_ADMIN_PASSWORD:}
@@ -34,3 +31,42 @@ logging:
     com.shaker: DEBUG
     org.springframework.security: INFO
     org.mongodb.driver: WARN
+    # The embedded mongod echoes its own JSON server log at INFO - quiet it down.
+    de.flapdoodle.embed.mongo.spring.autoconfigure.EmbeddedMongo: WARN
+
+---
+# local (default): embedded, in-process MongoDB. Zero install, zero network. Data is wiped
+# on every restart - fine for building against, not for anything you need to keep.
+spring:
+  config:
+    activate:
+      on-profile: local
+  data:
+    mongodb:
+      database: shaker
+      # Pin to the standard port (flapdoodle otherwise picks a random free one each boot)
+      # so it's always reachable at the same address, e.g. from MongoDB Compass.
+      port: 27017
+
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 7.0.14
+
+---
+# cloud: MongoDB Atlas (or any external MongoDB).
+#   SPRING_PROFILES_ACTIVE=cloud MONGODB_URI="mongodb+srv://..." mvn spring-boot:run
+# Excludes the embedded-mongo autoconfiguration, which otherwise starts unconditionally
+# whenever the dependency is on the classpath, regardless of any URI you set.
+spring:
+  config:
+    activate:
+      on-profile: cloud
+  autoconfigure:
+    exclude:
+      - de.flapdoodle.embed.mongo.spring.autoconfigure.EmbeddedMongoAutoConfiguration
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:shaker}

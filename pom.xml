@@ -23,6 +23,7 @@
         <npm.version>10.9.0</npm.version>
         <frontend.dir>${project.basedir}/frontend</frontend.dir>
         <skipFrontend>false</skipFrontend>
+        <flapdoodle.spring.version>4.20.0</flapdoodle.spring.version>
     </properties>
 
     <dependencies>
@@ -52,6 +53,16 @@
             <version>4.0.0</version>
         </dependency>
 
+        <!-- Embedded MongoDB for the "local" profile (the default) - Maven downloads a mongod
+             binary into ~/.m2 like any other dependency and Spring starts/stops it automatically.
+             No install, no service, no cloud reachability needed. Inert under the "cloud" profile,
+             where EmbeddedMongoAutoConfiguration is excluded (see application.yml). -->
+        <dependency>
+            <groupId>de.flapdoodle.embed</groupId>
+            <artifactId>de.flapdoodle.embed.mongo.spring3x</artifactId>
+            <version>${flapdoodle.spring.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -62,6 +73,13 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.46</version>
+        <scope>provided</scope>
+    </dependency>
     </dependencies>
 
     <build>
@@ -69,6 +87,78 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Add src/it/java as a second test-source root for integration tests (*IT). -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-integration-test-source</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/it/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Surefire runs unit tests (*Test) in `mvn test`; Failsafe runs integration
+                 tests (*IT) from src/it/java in `mvn verify`. The parent POM already binds
+                 failsafe's integration-test + verify goals - just activate the plugin. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+
+            <!-- Code coverage.
+                 `mvn test`   -> unit report        target/site/jacoco/index.html
+                 `mvn verify` -> + integration report target/site/jacoco-it/index.html
+                 Lombok-generated getters/setters are excluded (see lombok.config). -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.12</version>
+                <configuration>
+                    <excludes>
+                        <exclude>com/shaker/ShakerApplication.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-prepare-agent-integration</id>
+                        <goals>
+                            <goal>prepare-agent-integration</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report-integration</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>report-integration</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
