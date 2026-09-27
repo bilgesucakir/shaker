@@ -77,27 +77,51 @@ npm run dev        # http://localhost:5173, proxies /api -> :8080
 
 ## App functionality
 
-- **Accounts** — signup/login/logout (session cookie), a profile with preferences: favorite
-  spirit, whether to see community guideline tips, preferred display unit (oz/ml).
-- **Diary** — log a drink you made yourself or ordered somewhere, with a rating, notes, and date.
-- **Recipes** — browse public recipes (app-seeded classics + other users' public ones);
-  create your own; edit one of your own recipes as a **new version** (kept in the same
-  lineage/family); **fork** any visible recipe (classic or someone else's) into your own
-  new lineage. Every recipe gets computed fields: an ABV% estimate, a calorie estimate
-  (calculated from ingredients, or entered manually), base-spirit tags (for filtering,
-  e.g. "gin"), rolled-up dietary flags (vegan, dairy-free, ...), and a **generated glass
-  illustration spec** — a drawn (not AI-generated) glass shape filled with ingredient
-  colors, blended for shaken/stirred drinks or kept as distinct layered bands for layered
-  ones.
-- **Bar** — track the ingredients and equipment (jigger, shaker, ...) you own; check any
-  recipe's `/availability` to see if you have everything it needs.
-- **Bookmarks** — save other people's/classic public recipes you want to try later.
-- **Collections** — named, public-or-private lists of recipes (Letterboxd-style).
-- **Guidelines** — articles, videos, pro tips, and community-submitted tips, taggable by
-  spirit and moderated (pending/approved/rejected) before going live.
-- **Roles & admin** — `USER`/`ADMIN`. Admins get a panel (`/admin/*` in the SPA) to manage
-  user roles, the ingredient catalog, guidelines (incl. moderation), and recipe oversight
-  (unpublish anything, or author new official classics).
+**Accounts**
+- Signup / login / logout (session cookie)
+- Profile preferences: favorite spirit, whether to see community guideline tips, preferred
+  display unit (oz/ml)
+
+**Diary**
+- Log a drink you made yourself, or one you ordered somewhere
+- Rating, notes, and date per entry
+
+**Recipes**
+- Browse public recipes — app-seeded classics plus other users' public ones
+- Create your own
+- Edit one of your own recipes as a **new version**, kept in the same lineage/family
+- **Fork** any visible recipe (classic or someone else's) into your own new lineage
+- Every recipe gets computed fields:
+  - ABV% estimate
+  - Calorie estimate — calculated from ingredients, or entered manually
+  - Base-spirit tags for filtering (e.g. "gin")
+  - Rolled-up dietary flags (vegan, dairy-free, ...)
+  - A **generated glass illustration spec** — a drawn (not AI-generated) glass shape
+    filled with ingredient colors: blended into one color for shaken/stirred drinks,
+    kept as distinct layered bands for layered ones
+
+**Bar**
+- Track the ingredients and equipment (jigger, shaker, ...) you own
+- Check any recipe's `/availability` to see if you have everything it needs
+
+**Bookmarks**
+- Save other people's or classic public recipes you want to try later
+
+**Collections**
+- Named, public-or-private lists of recipes (Letterboxd-style)
+
+**Guidelines**
+- Articles, videos, pro tips, and community-submitted tips
+- Taggable by spirit
+- Moderated (pending / approved / rejected) before going live
+
+**Roles & admin**
+- `USER` / `ADMIN`
+- Admins get a panel (`/admin/*` in the SPA) to:
+  - Manage user roles
+  - Manage the ingredient catalog
+  - Manage guidelines, including moderation
+  - Oversee recipes — unpublish anything, or author new official classics
 
 ## API
 
@@ -234,69 +258,197 @@ entities that always belong to exactly one user also extend `common.UserOwnedEnt
 (adds `ownerUsername: String`) — `Recipe` deliberately does not, since its owner is
 nullable for app-seeded classics.
 
-**`common`** — `Visibility` (enum: `PRIVATE`, `UNLISTED`, `PUBLIC`)
+### `common`
 
-**`user`**
-- `User` (`BaseEntity`): `username: String`, `email: String`, `passwordHash: String`,
-  `displayName: String`, `bio: String`, `roles: Set<Role>`, `preferences: UserPreferences`
-- `Role` (enum): `USER`, `ADMIN`
-- `UserPreferences` (embedded): `favoriteSpirit: String`, `showCommunityTips: boolean`,
-  `preferredVolumeUnit: VolumeUnit`
-- `VolumeUnit` (enum): `OZ`, `ML`
+| Type | Kind | Fields |
+|------|------|--------|
+| `BaseEntity` | abstract base | `id: String`, `createdAt: Instant` |
+| `UserOwnedEntity` | abstract base (extends `BaseEntity`) | `ownerUsername: String` |
+| `Visibility` | enum | `PRIVATE`, `UNLISTED`, `PUBLIC` |
 
-**`diary`**
-- `DiaryEntry` (`UserOwnedEntity`): `drinkName: String`, `rating: Integer`, `notes: String`,
-  `loggedOn: LocalDate`
+### `user`
 
-**`guideline`**
-- `Guideline` (`BaseEntity`): `slug: String`, `title: String`, `category: String`,
-  `body: String`, `sortOrder: int`, `contentType: GuidelineContentType`,
-  `authorType: GuidelineAuthorType`, `authorUsername: String`, `videoUrl: String`,
-  `relatedRecipeId: String`, `relatedSpiritTags: Set<String>`,
-  `moderationStatus: ModerationStatus`, `helpfulCount: int`
-- `GuidelineContentType` (enum): `ARTICLE`, `VIDEO`, `PRO_TIP`, `COMMUNITY_TIP`
-- `GuidelineAuthorType` (enum): `EDITORIAL`, `VERIFIED_PRO`, `COMMUNITY`
-- `ModerationStatus` (enum): `PENDING`, `APPROVED`, `REJECTED`
+**`User`** (extends `BaseEntity`)
 
-**`recipe`**
-- `Recipe` (`BaseEntity`): `name: String`, `recipeFamilyId: String`,
-  `forkedFromRecipeId: String`, `origin: RecipeOrigin`, `createdBy: String`,
-  `visibility: Visibility`, `category: RecipeCategory`, `baseSpiritTags: Set<String>`,
-  `glass: Glass`, `ice: IceStyle`, `method: PreparationMethod`,
-  `ingredients: List<IngredientLine>`, `garnishes: List<Garnish>`,
-  `instructions: List<String>`, `servings: int`, `abvEstimate: Double`,
-  `tasteProfile: Set<TasteNote>`, `dietaryFlags: Set<String>`, `difficulty: Difficulty`,
-  `tags: Set<String>`, `description: String`, `photos: List<String>`,
-  `generatedImageSpec: GeneratedImageSpec`, `calorieEstimate: Integer`,
-  `calorieSource: CalorieSource`, `ratingAverage: double`, `ratingCount: int`,
-  `version: int`, `updatedAt: Instant`
-- `Ingredient` (`BaseEntity`): `name: String`, `aliases: Set<String>`,
-  `category: IngredientCategory`, `subCategory: String`, `abvPercent: double`,
-  `colorHex: String`, `opacity: Opacity`, `relativeDensity: Double`,
-  `allergenTags: Set<String>`, `caloriesPerOz: Double`
-- `IngredientLine` (embedded): `ingredientRef: String`, `freeTextName: String`,
-  `role: IngredientRole`, `amount: Double`, `unit: MeasurementUnit`,
-  `preparationNote: String`, `optional: boolean`, `sequence: int`
-- `Garnish` (embedded): `description: String`, `type: GarnishType`
-- `GeneratedImageSpec` (embedded): `glass: Glass`, `fillLevel: double`,
-  `colorBands: List<ColorBand>`, `iceOverlay: IceStyle`, `garnishIcon: GarnishType`,
-  `carbonationOverlay: boolean`, `renderedAssetUrl: String`
-- `ColorBand` (embedded): `colorHex: String`, `proportion: double`
-- Enums: `RecipeOrigin` (`APP_CLASSIC`, `USER_ORIGINAL`, `USER_FORK`), `RecipeCategory`,
-  `Glass`, `IceStyle`, `PreparationMethod`, `TasteNote`, `Difficulty`, `CalorieSource`
-  (`CALCULATED`, `USER_ENTERED`), `IngredientCategory`, `Opacity`, `IngredientRole`,
-  `MeasurementUnit`, `GarnishType`
+| Field | Type |
+|-------|------|
+| `username` | `String` |
+| `email` | `String` |
+| `passwordHash` | `String` |
+| `displayName` | `String` |
+| `bio` | `String` |
+| `roles` | `Set<Role>` |
+| `preferences` | `UserPreferences` |
 
-**`bar`**
-- `UserBarItem` (`UserOwnedEntity`): `itemType: BarItemType`, `ingredientRef: String`,
-  `equipment: Equipment`
-- `Bookmark` (`UserOwnedEntity`): `recipeId: String`
-- `RecipeCollection` (`UserOwnedEntity`): `name: String`, `description: String`,
-  `visibility: Visibility`, `recipeIds: List<String>`, `updatedAt: Instant`
-- `BarItemType` (enum): `INGREDIENT`, `EQUIPMENT`
-- `Equipment` (enum): `SHAKER`, `JIGGER`, `MUDDLER`, `BAR_SPOON`, `STRAINER`,
-  `FINE_STRAINER`, `BLENDER`, `CHANNEL_KNIFE`, `PEELER`, `MIXING_GLASS`, `BLOWTORCH`,
-  `ICE_MOLD`, `OTHER`
+**`UserPreferences`** (embedded)
+
+| Field | Type |
+|-------|------|
+| `favoriteSpirit` | `String` |
+| `showCommunityTips` | `boolean` |
+| `preferredVolumeUnit` | `VolumeUnit` |
+
+Enums: `Role` (`USER`, `ADMIN`), `VolumeUnit` (`OZ`, `ML`)
+
+### `diary`
+
+**`DiaryEntry`** (extends `UserOwnedEntity`)
+
+| Field | Type |
+|-------|------|
+| `drinkName` | `String` |
+| `rating` | `Integer` |
+| `notes` | `String` |
+| `loggedOn` | `LocalDate` |
+
+### `guideline`
+
+**`Guideline`** (extends `BaseEntity`)
+
+| Field | Type |
+|-------|------|
+| `slug` | `String` |
+| `title` | `String` |
+| `category` | `String` |
+| `body` | `String` |
+| `sortOrder` | `int` |
+| `contentType` | `GuidelineContentType` |
+| `authorType` | `GuidelineAuthorType` |
+| `authorUsername` | `String` |
+| `videoUrl` | `String` |
+| `relatedRecipeId` | `String` |
+| `relatedSpiritTags` | `Set<String>` |
+| `moderationStatus` | `ModerationStatus` |
+| `helpfulCount` | `int` |
+
+Enums: `GuidelineContentType` (`ARTICLE`, `VIDEO`, `PRO_TIP`, `COMMUNITY_TIP`),
+`GuidelineAuthorType` (`EDITORIAL`, `VERIFIED_PRO`, `COMMUNITY`), `ModerationStatus`
+(`PENDING`, `APPROVED`, `REJECTED`)
+
+### `recipe`
+
+**`Recipe`** (extends `BaseEntity`)
+
+| Field | Type |
+|-------|------|
+| `name` | `String` |
+| `recipeFamilyId` | `String` |
+| `forkedFromRecipeId` | `String` |
+| `origin` | `RecipeOrigin` |
+| `createdBy` | `String` |
+| `visibility` | `Visibility` |
+| `category` | `RecipeCategory` |
+| `baseSpiritTags` | `Set<String>` |
+| `glass` | `Glass` |
+| `ice` | `IceStyle` |
+| `method` | `PreparationMethod` |
+| `ingredients` | `List<IngredientLine>` |
+| `garnishes` | `List<Garnish>` |
+| `instructions` | `List<String>` |
+| `servings` | `int` |
+| `abvEstimate` | `Double` |
+| `tasteProfile` | `Set<TasteNote>` |
+| `dietaryFlags` | `Set<String>` |
+| `difficulty` | `Difficulty` |
+| `tags` | `Set<String>` |
+| `description` | `String` |
+| `photos` | `List<String>` |
+| `generatedImageSpec` | `GeneratedImageSpec` |
+| `calorieEstimate` | `Integer` |
+| `calorieSource` | `CalorieSource` |
+| `ratingAverage` | `double` |
+| `ratingCount` | `int` |
+| `version` | `int` |
+| `updatedAt` | `Instant` |
+
+**`Ingredient`** (extends `BaseEntity`)
+
+| Field | Type |
+|-------|------|
+| `name` | `String` |
+| `aliases` | `Set<String>` |
+| `category` | `IngredientCategory` |
+| `subCategory` | `String` |
+| `abvPercent` | `double` |
+| `colorHex` | `String` |
+| `opacity` | `Opacity` |
+| `relativeDensity` | `Double` |
+| `allergenTags` | `Set<String>` |
+| `caloriesPerOz` | `Double` |
+
+**`IngredientLine`** (embedded)
+
+| Field | Type |
+|-------|------|
+| `ingredientRef` | `String` |
+| `freeTextName` | `String` |
+| `role` | `IngredientRole` |
+| `amount` | `Double` |
+| `unit` | `MeasurementUnit` |
+| `preparationNote` | `String` |
+| `optional` | `boolean` |
+| `sequence` | `int` |
+
+**`Garnish`** (embedded)
+
+| Field | Type |
+|-------|------|
+| `description` | `String` |
+| `type` | `GarnishType` |
+
+**`GeneratedImageSpec`** (embedded)
+
+| Field | Type |
+|-------|------|
+| `glass` | `Glass` |
+| `fillLevel` | `double` |
+| `colorBands` | `List<ColorBand>` |
+| `iceOverlay` | `IceStyle` |
+| `garnishIcon` | `GarnishType` |
+| `carbonationOverlay` | `boolean` |
+| `renderedAssetUrl` | `String` |
+
+**`ColorBand`** (embedded)
+
+| Field | Type |
+|-------|------|
+| `colorHex` | `String` |
+| `proportion` | `double` |
+
+Enums: `RecipeOrigin` (`APP_CLASSIC`, `USER_ORIGINAL`, `USER_FORK`), `RecipeCategory`,
+`Glass`, `IceStyle`, `PreparationMethod`, `TasteNote`, `Difficulty`, `CalorieSource`
+(`CALCULATED`, `USER_ENTERED`), `IngredientCategory`, `Opacity`, `IngredientRole`,
+`MeasurementUnit`, `GarnishType`
+
+### `bar`
+
+**`UserBarItem`** (extends `UserOwnedEntity`)
+
+| Field | Type |
+|-------|------|
+| `itemType` | `BarItemType` |
+| `ingredientRef` | `String` |
+| `equipment` | `Equipment` |
+
+**`Bookmark`** (extends `UserOwnedEntity`)
+
+| Field | Type |
+|-------|------|
+| `recipeId` | `String` |
+
+**`RecipeCollection`** (extends `UserOwnedEntity`)
+
+| Field | Type |
+|-------|------|
+| `name` | `String` |
+| `description` | `String` |
+| `visibility` | `Visibility` |
+| `recipeIds` | `List<String>` |
+| `updatedAt` | `Instant` |
+
+Enums: `BarItemType` (`INGREDIENT`, `EQUIPMENT`), `Equipment` (`SHAKER`, `JIGGER`,
+`MUDDLER`, `BAR_SPOON`, `STRAINER`, `FINE_STRAINER`, `BLENDER`, `CHANNEL_KNIFE`, `PEELER`,
+`MIXING_GLASS`, `BLOWTORCH`, `ICE_MOLD`, `OTHER`)
 
 ## Layout
 
